@@ -4,10 +4,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class DB {
-    private static final String FILE_NAME = Paths.get("src", "main", "resources", "output.txt").toString();
+    private static final String FILE_NAME = Paths.get("src", "main", "resources", "Logs.txt").toString();
 
     public static void save(String text) {
         try {

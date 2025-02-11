@@ -34,6 +34,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             System.out.println("Received message: " + userMessage);
             ui.getLabel().setText(ui.getLabel().getText()+ "\n" +"["+ nickname + "]" + userMessage);
             DB.save("["+ nickname + "]" + userMessage);
+            JSONDB.save("["+ nickname + "]" + userMessage);
             //sendToTelegram(update);
 
         }else {

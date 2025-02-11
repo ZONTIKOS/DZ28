@@ -1,19 +1,19 @@
 package org.example;
 
 import javax.swing.*;
-import javax.swing.JOptionPane;
 import java.awt.*;
+import java.io.File;
 import java.util.ArrayList;
 
 public class UI extends JFrame {
     JTextArea label = new JTextArea(" ");
     JLabel consoleLabel = new JLabel("Console");
-    TextArea messageArea = new TextArea("Write message");
-
+    JTextField messageField = new JTextField();
     private MyTelegramBot myTelegramBot;
+
     public UI() {
         setTitle("Console");
-        setSize(1024, 800); // Зменшена висота
+        setSize(1170, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -25,59 +25,108 @@ public class UI extends JFrame {
         consoleLabel.setBounds(20, 10, 950, 30);
         consoleLabel.setFont(new Font("Monospaced", Font.BOLD, 16));
         consoleLabel.setForeground(Color.WHITE);
-        JButton sendButton = new JButton("Send");
-        sendButton.setBounds(900, 10, 80, 30);
-        sendButton.setFont(new Font("Monospaced", Font.BOLD, 16));
-        sendButton.setForeground(Color.WHITE);
-        sendButton.setBackground(new Color(50, 50, 50));
-        sendButton.addActionListener(e -> {
-            getLabel().setText(getLabel().getText() + "\n"+"[BotI]" + messageArea.getText());
-            myTelegramBot.sendToTelegram(messageArea.getText());
-        });
-        panel.add(sendButton);
-        sendButton.setVisible(true);
-        label.setBounds(20, 50, 950, 700);
+        panel.add(consoleLabel);
+
+        label.setBounds(20, 50, 950, 600);
         label.setFont(new Font("Monospaced", Font.BOLD, 16));
         label.setForeground(Color.WHITE);
         label.setBackground(new Color(50, 50, 50));
         label.setMargin(new Insets(10, 10, 10, 10));
-
-        messageArea.setBounds(480, 0, 400, 40);
-        messageArea.setFont(new Font("Monospaced", Font.BOLD, 16));
-        messageArea.setForeground(Color.WHITE);
-        messageArea.setBackground(new Color(50, 50, 50));
-        messageArea.setVisible(true);
-        panel.add(messageArea);
-        panel.add(consoleLabel);
         panel.add(label);
 
-        setVisible(true);
+        messageField.setBounds(20, 670, 800, 40);
+        messageField.setFont(new Font("Monospaced", Font.BOLD, 16));
+        messageField.setForeground(Color.WHITE);
+        messageField.setBackground(new Color(50, 50, 50));
+        panel.add(messageField);
 
-        JButton LoadButton = new JButton("Load");
-        LoadButton.setBounds(390, 10, 80, 30);
-        LoadButton.setFont(new Font("Monospaced", Font.BOLD, 16));
-        LoadButton.setForeground(Color.WHITE);
-        LoadButton.setBackground(new Color(50, 50, 50));
-        LoadButton.addActionListener(e -> {
+        JButton sendButton = new JButton("Send");
+        sendButton.setBounds(830, 670, 100, 40);
+        sendButton.setFont(new Font("Monospaced", Font.BOLD, 16));
+        sendButton.setForeground(Color.WHITE);
+        sendButton.setBackground(new Color(50, 50, 50));
+        sendButton.addActionListener(e -> {
+            getLabel().setText(getLabel().getText() + "\n" + "[BotI] " + messageField.getText());
+            myTelegramBot.sendToTelegram(messageField.getText());
+            messageField.setText("");
+        });
+        panel.add(sendButton);
+
+        int buttonX = 1000;
+
+        JButton saveButton = createButton("Save", buttonX, 50, 120, 40, e -> DB.save(getLabel().getText()));
+        JButton loadButton = createButton("Load", buttonX, 100, 120, 40, e -> {
             ArrayList<String> lines = DB.read();
             for (String line : lines) {
                 getLabel().setText(getLabel().getText() + "\n" + line);
             }
         });
-        panel.add(LoadButton);
-        LoadButton.setVisible(true);
+        JButton clearButton = createButton("Clear", buttonX, 150, 120, 40, e -> getLabel().setText(" "));
+        JButton logClearButton = createButton("LogClear", buttonX, 200, 120, 40, e -> {
+            File file = new File("src/main/resources/Logs.txt");
+            if (file.exists()) {
+                file.delete();
+                System.out.println("File cleared successfully.");
+            } else {
+                System.out.println("File does not exist.");
+            }
+        });
+        JButton loadJSONButton = createButton("JSONLogs", buttonX, 250, 120, 40, e -> {
+            ArrayList<String> lines = (ArrayList<String>) JSONDB.read();
+            for (String line : lines) {
+                getLabel().setText(getLabel().getText() + "\n" + line);
+            }
+        });
+        JButton logClearJSONButton = createButton("JSONLogClear", buttonX, 350, 120, 40, e -> {
+            File file = new File("src/main/resources/logs.json");
+            if (file.exists()) {
+                file.delete();
+                System.out.println("File cleared successfully.");
+            } else {
+                System.out.println("File does not exist.");
+            }
+        });
+        JButton saveJSONButton = createButton("JSONSave", buttonX, 300, 120, 40, e -> JSONDB.save(getLabel().getText()));
+        JButton helpButton = createButton("?", buttonX, 400, 120, 40, e -> {
+            getLabel().setText(getLabel().getText() + "\n" + "[Helper] Commands:\n" +
+                    "[Helper] Send - send message\n" +
+                    "[Helper] Load - load logs\n" +
+                    "[Helper] Clear - clear logs\n" +
+                    "[Helper] Save - save logs\n" +
+                    "[Helper] LogClear - clear logs\n" +
+                    "[Helper] JSONLogs - load JSON logs\n" +
+                    "[Helper] JSONSave - save logs to JSON\n" +
+                    "[Helper] JSONLogClear - clear JSON logs\n" +
+                    "[Helper] ? - show commands\n");
+        });
 
+        panel.add(saveButton);
+        panel.add(loadButton);
+        panel.add(clearButton);
+        panel.add(logClearButton);
+        panel.add(loadJSONButton);
+        panel.add(logClearJSONButton);
+        panel.add(saveJSONButton);
+        panel.add(helpButton);
+
+        setVisible(true);
     }
 
-    public TextArea getMessageArea() {
-        return messageArea;
+    private JButton createButton(String text, int x, int y, int width, int height, java.awt.event.ActionListener action) {
+        JButton button = new JButton(text);
+        button.setBounds(x, y, width, height);
+        button.setFont(new Font("Monospaced", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(new Color(50, 50, 50));
+        button.addActionListener(action);
+        return button;
     }
 
     public JTextArea getLabel() {
         return label;
     }
-    public void setBot(MyTelegramBot myTelegramBot){
+
+    public void setBot(MyTelegramBot myTelegramBot) {
         this.myTelegramBot = myTelegramBot;
     }
-
 }
