@@ -4,12 +4,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 public class UI extends JFrame {
     JTextArea label = new JTextArea(" ");
     JLabel consoleLabel = new JLabel("Console");
     JTextField messageField = new JTextField();
     private MyTelegramBot myTelegramBot;
+    private DBPostgres dbPostgres;
 
     public UI() {
         setTitle("Console");
@@ -40,13 +42,8 @@ public class UI extends JFrame {
         messageField.setBackground(new Color(50, 50, 50));
         panel.add(messageField);
 
-        JButton sendButton = new JButton("Send");
-        sendButton.setBounds(830, 670, 100, 40);
-        sendButton.setFont(new Font("Monospaced", Font.BOLD, 16));
-        sendButton.setForeground(Color.WHITE);
-        sendButton.setBackground(new Color(50, 50, 50));
-        sendButton.addActionListener(e -> {
-            getLabel().setText(getLabel().getText() + "\n" + "[BotI] " + messageField.getText());
+        JButton sendButton = createButton("Send", 830, 670, 100, 40, e -> {
+            label.setText(label.getText() + "\n" + "[BotI] " + messageField.getText());
             myTelegramBot.sendToTelegram(messageField.getText());
             messageField.setText("");
         });
@@ -54,60 +51,39 @@ public class UI extends JFrame {
 
         int buttonX = 1000;
 
-        JButton saveButton = createButton("Save", buttonX, 50, 120, 40, e -> DB.save(getLabel().getText()));
-        JButton loadButton = createButton("Load", buttonX, 100, 120, 40, e -> {
+        panel.add(createButton("Save", buttonX, 50, 120, 40, e -> DB.save(label.getText())));
+        panel.add(createButton("Load", buttonX, 100, 120, 40, e -> {
             ArrayList<String> lines = DB.read();
-            for (String line : lines) {
-                getLabel().setText(getLabel().getText() + "\n" + line);
-            }
-        });
-        JButton clearButton = createButton("Clear", buttonX, 150, 120, 40, e -> getLabel().setText(" "));
-        JButton logClearButton = createButton("LogClear", buttonX, 200, 120, 40, e -> {
-            File file = new File("src/main/resources/Logs.txt");
-            if (file.exists()) {
-                file.delete();
-                System.out.println("File cleared successfully.");
-            } else {
-                System.out.println("File does not exist.");
-            }
-        });
-        JButton loadJSONButton = createButton("JSONLogs", buttonX, 250, 120, 40, e -> {
+            label.setText(String.join("\n", lines));
+        }));
+        panel.add(createButton("Clear", buttonX, 150, 120, 40, e -> label.setText(" ")));
+        panel.add(createButton("LogClear", buttonX, 200, 120, 40, e -> clearFile("src/main/resources/Logs.txt")));
+        panel.add(createButton("JSONLogs", buttonX, 250, 120, 40, e -> {
             ArrayList<String> lines = (ArrayList<String>) JSONDB.read();
-            for (String line : lines) {
-                getLabel().setText(getLabel().getText() + "\n" + line);
-            }
-        });
-        JButton logClearJSONButton = createButton("JSONLogClear", buttonX, 350, 120, 40, e -> {
-            File file = new File("src/main/resources/logs.json");
-            if (file.exists()) {
-                file.delete();
-                System.out.println("File cleared successfully.");
-            } else {
-                System.out.println("File does not exist.");
-            }
-        });
-        JButton saveJSONButton = createButton("JSONSave", buttonX, 300, 120, 40, e -> JSONDB.save(getLabel().getText()));
-        JButton helpButton = createButton("?", buttonX, 400, 120, 40, e -> {
-            getLabel().setText(getLabel().getText() + "\n" + "[Helper] Commands:\n" +
-                    "[Helper] Send - send message\n" +
-                    "[Helper] Load - load logs\n" +
-                    "[Helper] Clear - clear logs\n" +
-                    "[Helper] Save - save logs\n" +
-                    "[Helper] LogClear - clear logs\n" +
-                    "[Helper] JSONLogs - load JSON logs\n" +
-                    "[Helper] JSONSave - save logs to JSON\n" +
-                    "[Helper] JSONLogClear - clear JSON logs\n" +
-                    "[Helper] ? - show commands\n");
-        });
+            label.setText(String.join("\n", lines));
+        }));
+        panel.add(createButton("JSONSave", buttonX, 300, 120, 40, e -> JSONDB.save(label.getText())));
+        panel.add(createButton("JSONLogClear", buttonX, 350, 120, 40, e -> clearFile("src/main/resources/logs.json")));
+        panel.add(createButton("?", buttonX, 400, 120, 40, e -> showHelp()));
 
-        panel.add(saveButton);
-        panel.add(loadButton);
-        panel.add(clearButton);
-        panel.add(logClearButton);
-        panel.add(loadJSONButton);
-        panel.add(logClearJSONButton);
-        panel.add(saveJSONButton);
-        panel.add(helpButton);
+        panel.add(createButton("PSave", buttonX, 450, 120, 40, e -> DBPostgres.save("logstable", label.getText())));
+        panel.add(createButton("PLoad", buttonX, 500, 120, 40, e -> {
+            List<String> lines = DBPostgres.read();
+            label.setText(String.join("\n", lines));
+        }));
+        panel.add(createButton("PUpdate", buttonX, 550, 120, 40, e -> {
+            String id = JOptionPane.showInputDialog("Enter ID to update:");
+            String newData = JOptionPane.showInputDialog("Enter new data:");
+            if (id != null && newData != null) {
+                DBPostgres.update(Integer.parseInt(id), newData);
+            }
+        }));
+        panel.add(createButton("PDelete", buttonX, 600, 120, 40, e -> {
+            String id = JOptionPane.showInputDialog("Enter ID to delete:");
+            if (id != null) {
+                DBPostgres.delete(Integer.parseInt(id));
+            }
+        }));
 
         setVisible(true);
     }
@@ -120,6 +96,29 @@ public class UI extends JFrame {
         button.setBackground(new Color(50, 50, 50));
         button.addActionListener(action);
         return button;
+    }
+
+    private void clearFile(String filePath) {
+        File file = new File(filePath);
+        if (file.exists()) {
+            file.delete();
+            System.out.println("File cleared successfully.");
+        } else {
+            System.out.println("File does not exist.");
+        }
+    }
+
+    private void showHelp() {
+        label.setText(label.getText() + "\n" + "[Helper] Commands:\n" +
+                "[Helper] Send - send message\n" +
+                "[Helper] Load - load logs\n" +
+                "[Helper] Clear - clear logs\n" +
+                "[Helper] Save - save logs\n" +
+                "[Helper] LogClear - clear logs\n" +
+                "[Helper] JSONLogs - load JSON logs\n" +
+                "[Helper] JSONSave - save logs to JSON\n" +
+                "[Helper] JSONLogClear - clear JSON logs\n" +
+                "[Helper] ? - show commands\n");
     }
 
     public JTextArea getLabel() {
